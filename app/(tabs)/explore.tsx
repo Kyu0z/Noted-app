@@ -105,6 +105,7 @@ import React, { useState } from "react";
 import { View, StyleSheet } from "react-native";
 import Search from "../../components/Search";
 import SearchResults from "../../components/SearchResults";
+import Header from "../../components/Header";
 
 const TabTwoScreen: React.FC = () => {
   const [results, setResults] = useState<any>({ search: [] });
@@ -112,6 +113,7 @@ const TabTwoScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      <Header />
       <Search setResults={setResults} setRandom={setIsRandom} />
       <SearchResults results={results} _random={isRandom} />
     </View>
