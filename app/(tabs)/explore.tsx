@@ -101,59 +101,19 @@
 //   },
 // });
 
-import React, { useState } from 'react';
-import { View, TextInput, Button, FlatList, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import axios from 'axios';
-
-interface Article {
-  pageid: number;
-  title: string;
-  snippet: string;
-}
+import React, { useState } from "react";
+import { View, StyleSheet } from "react-native";
+import Search from "../../components/Search";
+import SearchResults from "../../components/SearchResults";
 
 const TabTwoScreen: React.FC = () => {
-  const [query, setQuery] = useState<string>('');
-  const [results, setResults] = useState<Article[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-
-  const searchWiki = async () => {
-    if (query.trim() === '') return;
-    setLoading(true);
-    try {
-      const response = await axios.get(
-        `https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&origin=*&srsearch=${query}`
-      );
-      setResults(response.data.query.search);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [results, setResults] = useState<any>({ search: [] });
+  const [isRandom, setIsRandom] = useState<boolean>(false);
 
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Search Wikipedia"
-        value={query}
-        onChangeText={setQuery}
-      />
-      <Button title="Search" onPress={searchWiki} />
-      {loading ? (
-        <ActivityIndicator size="large" color="#0000ff" />
-      ) : (
-        <FlatList
-          data={results}
-          keyExtractor={(item) => item.pageid.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.articleContainer}>
-              <Text style={styles.title}>{item.title}</Text>
-              <Text>{item.snippet.replace(/<\/?[^>]+(>|$)/g, "")}</Text>
-            </View>
-          )}
-        />
-      )}
+      <Search setResults={setResults} setRandom={setIsRandom} />
+      <SearchResults results={results} _random={isRandom} />
     </View>
   );
 };
@@ -164,19 +124,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginTop: 50,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    marginBottom: 10,
-  },
-  articleContainer: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
 });
 
 export default TabTwoScreen;
+
