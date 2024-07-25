@@ -59,7 +59,6 @@ const HomeScreen: React.FC = () => {
 
   const clearInput = () => {
     setCurrentNote('');
-    Keyboard.dismiss(); // Đóng bàn phím
   };
 
   const renderItem = ({ item, drag }: { item: Note; drag: () => void }) => (
@@ -113,14 +112,16 @@ const HomeScreen: React.FC = () => {
         </View>
       </View>
       {notes.length > 0 && (
-        <View style={styles.listNote}>
-          <Text style={styles.subHeading}>List Note</Text>
+        <View style={styles.listContainer}>
           <DraggableFlatList
             data={notes}
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
             onDragEnd={({ data }) => setNotes(data)}
             contentContainerStyle={styles.flatListContent}
+            ListHeaderComponent={
+              <Text style={styles.subHeading}>List Note</Text>
+            }
           />
         </View>
       )}
@@ -181,16 +182,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
-  listNote: {
+  listContainer: {
     flex: 1,
-    marginTop: 12,
+  },
+  flatListContent: {
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 8,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  flatListContent: {
     padding: 20,
+    paddingTop: 4,
   },
   noteRow: {
     flexDirection: 'row',
