@@ -1,77 +1,14 @@
-// import { Image, StyleSheet, Platform } from 'react-native';
-
-// import { HelloWave } from '@/components/HelloWave';
-// import ParallaxScrollView from '@/components/ParallaxScrollView';
-// import { ThemedText } from '@/components/ThemedText';
-// import { ThemedView } from '@/components/ThemedView';
-
-// export default function HomeScreen() {
-//   return (
-//     <ParallaxScrollView
-//       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-//       headerImage={
-//         <Image
-//           source={require('@/assets/images/partial-react-logo.png')}
-//           style={styles.reactLogo}
-//         />
-//       }>
-//       <ThemedView style={styles.titleContainer}>
-//         <ThemedText type="title">Welcome!</ThemedText>
-//         <HelloWave />
-//       </ThemedView>
-//       <ThemedView style={styles.stepContainer}>
-//         <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-//         <ThemedText>
-//           Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-//           Press{' '}
-//           <ThemedText type="defaultSemiBold">
-//             {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-//           </ThemedText>{' '}
-//           to open developer tools.
-//         </ThemedText>
-//       </ThemedView>
-//       <ThemedView style={styles.stepContainer}>
-//         <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-//         <ThemedText>
-//           Tap the Explore tab to learn more about what's included in this starter app.
-//         </ThemedText>
-//       </ThemedView>
-//       <ThemedView style={styles.stepContainer}>
-//         <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-//         <ThemedText>
-//           When you're ready, run{' '}
-//           <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-//           <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-//           <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-//           <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-//         </ThemedText>
-//       </ThemedView>
-//     </ParallaxScrollView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   titleContainer: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     gap: 8,
-//   },
-//   stepContainer: {
-//     gap: 8,
-//     marginBottom: 8,
-//   },
-//   reactLogo: {
-//     height: 178,
-//     width: 290,
-//     bottom: 0,
-//     left: 0,
-//     position: 'absolute',
-//   },
-// });
-
-
 import React, { useState } from 'react';
-import { View, TextInput, Button, FlatList, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  View,
+  TextInput,
+  FlatList,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Keyboard,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 interface Note {
   id: string;
@@ -86,13 +23,17 @@ const HomeScreen: React.FC = () => {
 
   const addNote = () => {
     if (currentNote.trim() !== '') {
-      setNotes([...notes, { id: Math.random().toString(), content: currentNote }]);
+      setNotes([
+        ...notes,
+        { id: Math.random().toString(), content: currentNote },
+      ]);
       setCurrentNote('');
+      Keyboard.dismiss(); // Đóng bàn phím
     }
   };
 
   const editNote = (noteId: string) => {
-    const noteToEdit = notes.find(note => note.id === noteId);
+    const noteToEdit = notes.find((note) => note.id === noteId);
     if (noteToEdit) {
       setCurrentNote(noteToEdit.content);
       setIsEditing(true);
@@ -101,45 +42,88 @@ const HomeScreen: React.FC = () => {
   };
 
   const updateNote = () => {
-    setNotes(notes.map(note => note.id === editingNoteId ? { ...note, content: currentNote } : note));
+    setNotes(
+      notes.map((note) =>
+        note.id === editingNoteId ? { ...note, content: currentNote } : note
+      )
+    );
     setCurrentNote('');
     setIsEditing(false);
     setEditingNoteId(null);
+    Keyboard.dismiss(); // Đóng bàn phím
   };
 
   const deleteNote = (noteId: string) => {
-    setNotes(notes.filter(note => note.id !== noteId));
+    setNotes(notes.filter((note) => note.id !== noteId));
+  };
+
+  const clearInput = () => {
+    setCurrentNote('');
+    Keyboard.dismiss(); // Đóng bàn phím
   };
 
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter note"
-        value={currentNote}
-        onChangeText={setCurrentNote}
-      />
-      <Button
-        title={isEditing ? "Update Note" : "Add Note"}
-        onPress={isEditing ? updateNote : addNote}
-      />
-      <FlatList
-        data={notes}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.noteContainer}>
-            <Text style={styles.noteContent}>{item.content}</Text>
-            <View style={styles.actions}>
-              <TouchableOpacity onPress={() => editNote(item.id)}>
-                <Text style={styles.editButton}>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => deleteNote(item.id)}>
-                <Text style={styles.deleteButton}>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      />
+      <Text style={styles.heading}>Create a new todo...</Text>
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder='Enter note'
+          value={currentNote}
+          onChangeText={setCurrentNote}
+        />
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={isEditing ? updateNote : addNote}
+          >
+            <Text style={styles.buttonText}>
+              {isEditing ? 'Update' : 'Create'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, styles.clearButton]}
+            onPress={clearInput}
+          >
+            <Text style={styles.buttonText}>Clear</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+      {notes.length > 0 && (
+        <View style={styles.listNote}>
+          <Text style={styles.subHeading}>List Note</Text>
+          <FlatList
+            data={notes}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.flatListContent}
+            renderItem={({ item, index }) => (
+              <View
+                style={[
+                  styles.noteRow,
+                  index === notes.length - 1 && styles.lastNoteRow,
+                ]}
+              >
+                <Text style={styles.noteIndex}>{index + 1}. </Text>
+                <View style={styles.noteContainer}>
+                  <Text style={styles.noteContent}>{item.content}</Text>
+                  <View style={styles.actions}>
+                    <TouchableOpacity onPress={() => editNote(item.id)}>
+                      <Icon name='edit' size={20} style={styles.editButton} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => deleteNote(item.id)}>
+                      <Icon
+                        name='trash'
+                        size={20}
+                        style={styles.deleteButton}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            )}
+          />
+        </View>
+      )}
     </View>
   );
 };
@@ -148,33 +132,101 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    marginTop: 50,
+    marginTop: 70,
+  },
+  heading: {
+    color: '#fff',
+    fontSize: 32,
+    marginBottom: 26,
+  },
+  subHeading: {
+    color: '#fff',
+    fontSize: 32,
+    textAlign: 'center',
+    padding: 20,
+    paddingBottom: 8,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 18,
   },
   input: {
+    flex: 1,
     borderWidth: 1,
     borderColor: '#ccc',
     padding: 10,
-    marginBottom: 10,
     color: '#fff',
+    borderRadius: 8,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    marginLeft: 10,
+  },
+  button: {
+    backgroundColor: '#007BFF',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    marginLeft: 5,
+  },
+  clearButton: {
+    backgroundColor: '#FF0000',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  listNote: {
+    flex: 1,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  flatListContent: {
+    padding: 20,
+  },
+  noteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  lastNoteRow: {
+    marginBottom: 0,
   },
   noteContainer: {
+    flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 10,
+    paddingBottom: 2,
+    paddingLeft: 3,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
+  },
+  noteIndex: {
+    color: '#fff',
+    marginRight: 8,
+    alignSelf: 'flex-end',
+    fontSize: 28,
   },
   noteContent: {
     flex: 1,
     color: '#fff',
+    lineHeight: 24,
   },
   actions: {
     flexDirection: 'row',
   },
   editButton: {
     marginRight: 10,
-    color: 'blue',
+    color: '#007BFF',
   },
   deleteButton: {
     color: 'red',
