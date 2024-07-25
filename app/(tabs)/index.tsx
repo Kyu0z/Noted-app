@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import {
   View,
   TextInput,
-  FlatList,
-  Text,
   StyleSheet,
+  Text,
   TouchableOpacity,
   Keyboard,
 } from 'react-native';
+import DraggableFlatList from 'react-native-draggable-flatlist';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 interface Note {
@@ -62,6 +62,29 @@ const HomeScreen: React.FC = () => {
     Keyboard.dismiss(); // Đóng bàn phím
   };
 
+  const renderItem = ({ item, drag }: { item: Note; drag: () => void }) => (
+    <TouchableOpacity
+      style={[
+        styles.noteRow,
+        notes.indexOf(item) === notes.length - 1 && styles.lastNoteRow,
+      ]}
+      onLongPress={drag} // Kéo và thả
+    >
+      <Text style={styles.noteIndex}>{notes.indexOf(item) + 1}. </Text>
+      <View style={styles.noteContainer}>
+        <Text style={styles.noteContent}>{item.content}</Text>
+        <View style={styles.actions}>
+          <TouchableOpacity onPress={() => editNote(item.id)}>
+            <Icon name='edit' size={20} style={styles.editButton} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => deleteNote(item.id)}>
+            <Icon name='trash' size={20} style={styles.deleteButton} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Create a new todo...</Text>
@@ -92,35 +115,12 @@ const HomeScreen: React.FC = () => {
       {notes.length > 0 && (
         <View style={styles.listNote}>
           <Text style={styles.subHeading}>List Note</Text>
-          <FlatList
+          <DraggableFlatList
             data={notes}
             keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            onDragEnd={({ data }) => setNotes(data)}
             contentContainerStyle={styles.flatListContent}
-            renderItem={({ item, index }) => (
-              <View
-                style={[
-                  styles.noteRow,
-                  index === notes.length - 1 && styles.lastNoteRow,
-                ]}
-              >
-                <Text style={styles.noteIndex}>{index + 1}. </Text>
-                <View style={styles.noteContainer}>
-                  <Text style={styles.noteContent}>{item.content}</Text>
-                  <View style={styles.actions}>
-                    <TouchableOpacity onPress={() => editNote(item.id)}>
-                      <Icon name='edit' size={20} style={styles.editButton} />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => deleteNote(item.id)}>
-                      <Icon
-                        name='trash'
-                        size={20}
-                        style={styles.deleteButton}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            )}
           />
         </View>
       )}
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   lastNoteRow: {
-    marginBottom: 0,
+    marginBottom: 4,
   },
   noteContainer: {
     flex: 1,
