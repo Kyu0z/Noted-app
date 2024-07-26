@@ -20,6 +20,7 @@ const HomeScreen: React.FC = () => {
   const [currentNote, setCurrentNote] = useState<string>('');
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   const addNote = () => {
     if (currentNote.trim() !== '') {
@@ -61,6 +62,14 @@ const HomeScreen: React.FC = () => {
     setCurrentNote('');
   };
 
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  const filteredNotes = notes.filter((note) =>
+    note.content.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const renderItem = ({ item, drag }: { item: Note; drag: () => void }) => (
     <TouchableOpacity
       style={[
@@ -90,6 +99,12 @@ const HomeScreen: React.FC = () => {
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
+          placeholder='Search notes'
+          value={searchQuery}
+          onChangeText={handleSearch}
+        />
+        <TextInput
+          style={styles.input}
           placeholder='Enter note'
           value={currentNote}
           onChangeText={setCurrentNote}
@@ -111,10 +126,10 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       </View>
-      {notes.length > 0 && (
+      {filteredNotes.length > 0 && (
         <View style={styles.listContainer}>
           <DraggableFlatList
-            data={notes}
+            data={filteredNotes}
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
             onDragEnd={({ data }) => setNotes(data)}
@@ -159,10 +174,10 @@ const styles = StyleSheet.create({
     padding: 10,
     color: '#fff',
     borderRadius: 8,
+    marginRight: 10,
   },
   buttonContainer: {
     flexDirection: 'row',
-    marginLeft: 10,
   },
   button: {
     backgroundColor: '#007BFF',
