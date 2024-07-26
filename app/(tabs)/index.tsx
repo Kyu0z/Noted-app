@@ -6,18 +6,23 @@ import {
   Text,
   TouchableOpacity,
   Keyboard,
+  FlatList,
 } from 'react-native';
-import DraggableFlatList from 'react-native-draggable-flatlist';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import DraggableFlatList, {
+  RenderItemParams,
+} from 'react-native-draggable-flatlist';
 
 interface Note {
   id: string;
   content: string;
+  category: string;
 }
 
 const HomeScreen: React.FC = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [currentNote, setCurrentNote] = useState<string>('');
+  const [currentCategory, setCurrentCategory] = useState<string>('');
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -26,9 +31,14 @@ const HomeScreen: React.FC = () => {
     if (currentNote.trim() !== '') {
       setNotes([
         ...notes,
-        { id: Math.random().toString(), content: currentNote },
+        {
+          id: Math.random().toString(),
+          content: currentNote,
+          category: currentCategory,
+        },
       ]);
       setCurrentNote('');
+      setCurrentCategory('');
       Keyboard.dismiss(); // Đóng bàn phím
     }
   };
@@ -37,6 +47,7 @@ const HomeScreen: React.FC = () => {
     const noteToEdit = notes.find((note) => note.id === noteId);
     if (noteToEdit) {
       setCurrentNote(noteToEdit.content);
+      setCurrentCategory(noteToEdit.category);
       setIsEditing(true);
       setEditingNoteId(noteId);
     }
@@ -45,10 +56,13 @@ const HomeScreen: React.FC = () => {
   const updateNote = () => {
     setNotes(
       notes.map((note) =>
-        note.id === editingNoteId ? { ...note, content: currentNote } : note
+        note.id === editingNoteId
+          ? { ...note, content: currentNote, category: currentCategory }
+          : note
       )
     );
     setCurrentNote('');
+    setCurrentCategory('');
     setIsEditing(false);
     setEditingNoteId(null);
     Keyboard.dismiss(); // Đóng bàn phím
@@ -60,6 +74,7 @@ const HomeScreen: React.FC = () => {
 
   const clearInput = () => {
     setCurrentNote('');
+    setCurrentCategory('');
   };
 
   const handleSearch = (query: string) => {
@@ -70,27 +85,72 @@ const HomeScreen: React.FC = () => {
     note.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const renderItem = ({ item, drag }: { item: Note; drag: () => void }) => (
-    <TouchableOpacity
-      style={[
-        styles.noteRow,
-        notes.indexOf(item) === notes.length - 1 && styles.lastNoteRow,
-      ]}
-      onLongPress={drag} // Kéo và thả
-    >
-      <Text style={styles.noteIndex}>{notes.indexOf(item) + 1}. </Text>
-      <View style={styles.noteContainer}>
-        <Text style={styles.noteContent}>{item.content}</Text>
-        <View style={styles.actions}>
-          <TouchableOpacity onPress={() => editNote(item.id)}>
-            <Icon name='edit' size={20} style={styles.editButton} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => deleteNote(item.id)}>
-            <Icon name='trash' size={20} style={styles.deleteButton} />
-          </TouchableOpacity>
+  const groupedNotes = filteredNotes.reduce((groups: any, note: any) => {
+    const category = note.category || 'Uncategorized';
+    if (!groups[category]) {
+      groups[category] = [];
+    }
+    groups[category].push(note);
+    return groups;
+  }, {});
+
+  const sections = Object.keys(groupedNotes).map((category) => ({
+    title: category,
+    data: groupedNotes[category],
+  }));
+
+  const updateNoteOrder = (
+    draggedData: Note[],
+    draggedSectionTitle: string
+  ) => {
+    const updatedSections = sections.map((section) => {
+      if (section.title === draggedSectionTitle) {
+        return { ...section, data: draggedData };
+      }
+      return section;
+    });
+
+    const updatedNotes = updatedSections.flatMap((section) => section.data);
+    setNotes(updatedNotes);
+  };
+
+  const renderItem = ({ item, drag, isActive }: RenderItemParams<Note>) => {
+    const index = filteredNotes.findIndex((note) => note.id === item.id);
+    return (
+      <TouchableOpacity
+        style={[
+          styles.noteRow,
+          index === filteredNotes.length - 1 && styles.lastNoteRow,
+          { backgroundColor: isActive ? '#000' : '#000' },
+        ]}
+        onLongPress={drag}
+      >
+        <Text style={styles.noteIndex}>{index + 1}. </Text>
+        <View style={styles.noteContainer}>
+          <Text style={styles.noteContent}>{item.content}</Text>
+          <View style={styles.actions}>
+            <TouchableOpacity onPress={() => editNote(item.id)}>
+              <Icon name='edit' size={20} style={styles.editButton} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => deleteNote(item.id)}>
+              <Icon name='trash' size={20} style={styles.deleteButton} />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderSection = ({ item }: { item: any }) => (
+    <View style={styles.listContainer}>
+      <Text style={styles.subHeading}>{item.title}</Text>
+      <DraggableFlatList
+        data={item.data}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        onDragEnd={({ data }) => updateNoteOrder(data, item.title)}
+      />
+    </View>
   );
 
   return (
@@ -98,10 +158,10 @@ const HomeScreen: React.FC = () => {
       <Text style={styles.heading}>Create a new todo...</Text>
       <View style={styles.inputContainer}>
         <TextInput
-          style={styles.input}
-          placeholder='Search notes'
-          value={searchQuery}
-          onChangeText={handleSearch}
+          style={[styles.input, styles.categoryInput]}
+          placeholder='Enter type'
+          value={currentCategory}
+          onChangeText={setCurrentCategory}
         />
         <TextInput
           style={styles.input}
@@ -126,20 +186,19 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       </View>
-      {filteredNotes.length > 0 && (
-        <View style={styles.listContainer}>
-          <DraggableFlatList
-            data={filteredNotes}
-            keyExtractor={(item) => item.id}
-            renderItem={renderItem}
-            onDragEnd={({ data }) => setNotes(data)}
-            contentContainerStyle={styles.flatListContent}
-            ListHeaderComponent={
-              <Text style={styles.subHeading}>List Note</Text>
-            }
-          />
-        </View>
-      )}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder='Search something...'
+          value={searchQuery}
+          onChangeText={handleSearch}
+        />
+      </View>
+      <FlatList
+        data={sections}
+        keyExtractor={(item) => item.title}
+        renderItem={renderSection}
+      />
     </View>
   );
 };
@@ -165,7 +224,12 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 18,
+    marginBottom: 28,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 38,
   },
   input: {
     flex: 1,
@@ -174,6 +238,9 @@ const styles = StyleSheet.create({
     padding: 10,
     color: '#fff',
     borderRadius: 8,
+    marginRight: 10,
+  },
+  categoryInput: {
     marginRight: 10,
   },
   buttonContainer: {
@@ -198,15 +265,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   listContainer: {
-    flex: 1,
-  },
-  flatListContent: {
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 8,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     padding: 20,
     paddingTop: 4,
+    marginBottom: 28,
   },
   noteRow: {
     flexDirection: 'row',
